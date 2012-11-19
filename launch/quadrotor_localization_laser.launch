@@ -1,0 +1,9 @@
+<launch>
+	<rosparam param="use_sim_time">true</rosparam>
+	<node pkg="humanoid_localization" type="localization_node" name="humanoid_localization" output="screen" >
+		<rosparam file="$(find humanoid_localization)/config/quadrotor_localization_laser.yaml" command="load" />
+<!-- 		<remap from="/odom" to="/nav"/> -->
+<!-- 		<remap from="/torso" to="/base_link"/> -->
+		
+	</node>
+</launch>
