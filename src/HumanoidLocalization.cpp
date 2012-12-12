@@ -345,14 +345,13 @@ bool HumanoidLocalization::localizeWithMeasurement(const PointCloud& pc_filtered
   // transformation from torso frame to laser
   // this takes the latest tf, assumes that torso to laser did not change over temp. sampling!
   tf::StampedTransform localSensorFrame;
+
   if (!m_motionModel->lookupLocalTransform(pc_filtered.header.frame_id, t, localSensorFrame))
     return false;
-
   tf::Transform torsoToSensor(localSensorFrame.inverse());
   
 //### Particles in log-form from here...
   toLogForm();
-
   // integrated pose (z, roll, pitch) meas. only if data OK:
   bool imuMsgOk = false;
   double angleX, angleY;
@@ -453,6 +452,76 @@ void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanCo
   ROS_INFO("%u/%zu laser beams skipped (out of valid range)", numBeamsSkipped, ranges.size());
 }
 
+void HumanoidLocalization::prepareFilteredPointCloud(const sensor_msgs::PointCloud2ConstPtr& pcIn, PointCloud& pc, std::vector<float>& ranges) const{
+  // prepare point cloud:
+  unsigned numBeams = pcIn->data.size();
+  //unsigned step = computeBeamStep(numBeams);
+
+  unsigned int numBeamsSkipped = 0;
+
+  // range_min of laser is also used to filter out wrong messages:
+  //double laserMin = std::max(double(laser->range_min), m_filterMinRange);
+  double sensorMin = m_filterMinRange;
+
+  // (range_max readings stay, will be used in the sensor model)
+
+  //ranges.reserve(m_numSensorBeams+3);
+  unsigned step = (numBeams/m_numSensorBeams);
+  unsigned jump = m_numSensorBeams;
+  ranges.reserve(numBeams);
+
+  /*
+  // build a point cloud
+  pc.header = laser->header;
+  pc.points.reserve(m_numSensorBeams+3);
+  for (unsigned beam_idx = 0; beam_idx < numBeams; beam_idx+= step){
+    float range = laser->ranges[beam_idx];
+    if (range >= laserMin && range <= m_filterMaxRange){
+      double laserAngle = laser->angle_min + beam_idx * laser->angle_increment;
+      tf::Transform laserAngleRotation(tf::Quaternion(tf::Vector3(0.0, 0.0, 1.0), laserAngle));
+      tf::Vector3 laserEndpointTrans(range, 0.0, 0.0);
+      tf::Vector3 pt(laserAngleRotation * laserEndpointTrans);
+
+      pc.points.push_back(pcl::PointXYZ(pt.x(), pt.y(), pt.z()));
+      ranges.push_back(range);
+
+    } else{
+      numBeamsSkipped++;
+    }
+
+  }
+  */
+  pc.header = pcIn->header;
+  pc.points.reserve(numBeams);
+  PointCloud pc_trans;
+  pcl::fromROSMsg(*pcIn, pc_trans);
+  PointCloud::const_iterator pc_it = pc_trans.begin();
+
+  std::vector<float>::const_iterator ranges_it = ranges.begin();
+  int previous_idx = 0;
+  for ( ; pc_it != pc_trans.end(); ++pc_it){
+    //for(int i = 0; i < 240; i=i+jump) {
+    //for(int j = 0; j < 320; j=j+jump) {
+      //step = i*320 + j - previous_idx;
+      //ROS_INFO("Step %d i %d j %d i*j+j", step, i, j, i*640+j);
+      //pc_it = pc_it + step;
+      //previous_idx = i*320 + j;
+      //++pc_it;
+      if (isnan(pc_it->x) || isnan(pc_it->y) || isnan(pc_it->z)) {
+        numBeamsSkipped++;
+      } else {
+        pc.points.push_back(pcl::PointXYZ(pc_it->x , pc_it->y, pc_it->z));
+        ranges.push_back(sqrt((pc_it->x * pc_it->x) + (pc_it->y * pc_it->y) + (pc_it->z * pc_it->z)));
+        //ROS_INFO("PC coords: x=%f, y=%f, z=%f", pc_it->x , pc_it->y, pc_it->z);
+      }
+   // }
+  }
+  pc.height = 1;
+  pc.width = pc.points.size();
+  pc.is_dense = true;
+  ROS_INFO("%u/%zu laser beams skipped (out of valid range)", numBeamsSkipped, ranges.size());
+}
+
 unsigned HumanoidLocalization::computeBeamStep(unsigned numBeams) const{
   unsigned step = 1;
   if (m_numSensorBeams > 1){
@@ -468,7 +537,48 @@ unsigned HumanoidLocalization::computeBeamStep(unsigned numBeams) const{
 }
 
 void HumanoidLocalization::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg) {
-  ROS_ERROR("Point cloud callback still needs to be integrated.");
+//ROS_ERROR("Point cloud callback still needs to be integrated.");
+  ROS_DEBUG("Point cloud received (time: %f)", msg->header.stamp.toSec());
+
+  if (!m_initialized){
+    ROS_WARN("Localization not initialized yet, skipping point cloud callback.");
+    return;
+  }
+
+  double timediff = (msg->header.stamp - m_lastPointCloudTime).toSec();
+  if (m_receivedSensorData && timediff < timediff){
+    ROS_WARN("Ignoring received point cloud data that is %f s older than previous data!", timediff);
+    return;
+  }
+
+
+  /// absolute, current odom pose
+  tf::Stamped<tf::Pose> odomPose;
+  // check if odometry available, skip scan if not.
+  if (!m_motionModel->lookupOdomPose(msg->header.stamp, odomPose))
+    return;
+
+  // relative odom transform to last odomPose
+  tf::Transform odomTransform = m_motionModel->computeOdomTransform(odomPose);
+
+  bool sensor_integrated = false;
+  if (!m_paused && (!m_receivedSensorData || isAboveMotionThreshold(odomTransform))) {
+
+    // convert laser to point cloud first:
+    PointCloud pc_filtered;
+    std::vector<float> pointCloudRangesSparse;
+    prepareFilteredPointCloud(msg, pc_filtered, pointCloudRangesSparse);
+
+    sensor_integrated = localizeWithMeasurement(pc_filtered, pointCloudRangesSparse, 10.0);
+
+  } else{ // no observation necessary: propagate particles forward by full interval
+
+    m_motionModel->applyOdomTransform(m_particles, odomTransform);
+  }
+
+  m_motionModel->storeOdomPose(odomPose);
+  publishPoseEstimate(msg->header.stamp, sensor_integrated);
+  m_lastPointCloudTime = msg->header.stamp;
 }
 
 void HumanoidLocalization::imuCallback(const sensor_msgs::ImuConstPtr& msg){

@@ -152,6 +152,12 @@ protected:
    */
   void prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc, std::vector<float>& ranges) const;
   
+  /**
+     * Prepares a PointCloud msg to take only a subset to integrate in the observation model
+     *
+     */
+  void prepareFilteredPointCloud(const sensor_msgs::PointCloud2ConstPtr& pcIn, PointCloud& pc, std::vector<float>& ranges) const;
+
   bool isAboveMotionThreshold(const tf::Transform& odomTransform);
   
   bool localizeWithMeasurement(const PointCloud& pc_filtered, const std::vector<float>& ranges, double max_range);
@@ -226,6 +232,7 @@ protected:
   double m_temporalSamplingRange;
   double m_transformTolerance;
   ros::Time m_lastLaserTime;
+  ros::Time m_lastPointCloudTime;
 
   /// absolute, summed translation (3D) since last laser integration
   double m_translationSinceScan;

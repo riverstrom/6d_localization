@@ -1,0 +1,46 @@
+<launch>
+	<rosparam param="use_sim_time">true </rosparam>
+
+<!-- 	<node pkg="rosbag" type="play" name="rosbag1" -->
+<!-- 	 args="-d 4 -s 4.65 -r 0.5 - -topics /tf - -bags /host/Users/Robotics\ Lab/Downloads/rgbd_dataset_freiburg1_360.bag"> -->
+<!-- 	</node> -->
+
+	<node pkg="rosbag" type="play" name="rosbag2"
+		args="--clock -d 0 -s 0 -r 0.5 --topics /tf /camera/depth/points --bags /host/Users/Robotics\ Lab/Downloads/rgbd_dataset_freiburg1_xyz-2hz-with-pointclouds.bag">
+<!-- 		<remap from="/camera/depth/points" to="/point_cloud" /> -->
+	</node>
+
+	<!-- <node pkg="tf" type="static_transform_publisher" name="nav_world_broadcaster" -->
+	<!-- args="0 0 0 0 0 0 /nav /world 100" /> -->
+<!-- 	<node pkg="tf" type="static_transform_publisher" name="world_kinect_broadcaster" -->
+<!-- 	args="0 0 1 0 0 0 /world /kinect 100" /> -->
+<!-- 	<node pkg="tf" type="static_transform_publisher" name="kinect_openni_broadcaster" -->
+<!-- 	args="0 0 0 0 0 0 /kinect /openni_rgb_optical_frame 100" /> -->
+	<node pkg="tf" type="static_transform_publisher" name="kinect_base_link_broadcaster"
+	args="0 0 -2.4 0 0 0 /kinect /base_footprint 100" />
+<!-- 	<node pkg="tf" type="static_transform_publisher" name="nav_base_link_broadcaster" -->
+<!-- 		args="0 0 0 0 0 0 /map /world 100" /> -->
+
+
+	<node pkg="humanoid_localization" type="localization_node" name="humanoid_localization"
+		output="screen">
+		<remap from="/point_cloud" to="/camera/depth/points" />
+		<remap from="/scan" to="/scan_OFF" />
+		<rosparam
+			file="$(find humanoid_localization)/config/quadrotor_localization_point_cloud.yaml"
+			command="load" />
+	</node>
+
+	<node pkg="octomap_server" type="octomap_server_node" name="octomap_server_node"
+		output="screen"
+		args="$(find sbpl_dynamic_env_global_planner_3D)/config/apt_01_qvga.bt" />
+<!-- 		args="$(find sbpl_dynamic_env_global_planner_3D)/config/freiburg1_360.bt" /> -->
+	<!-- <node pkg="octomap_server" type="octomap_server_node" name="octomap_server_node" -->
+	<!-- output="screen" -->
+<!-- 		args="$(find sbpl_dynamic_env_global_planner_3D)/config/wg_room_1.bt"/> -->
+
+
+	<node pkg="rviz" type="rviz" name="rviz"
+		args="$(find humanoid_localization)/config/quadrotor_localization_vis.vcg" />
+
+</launch>

@@ -66,9 +66,10 @@ void ObservationModel::integratePoseMeasurement(Particles& particles, double pos
     particles[i].weight += m_weightPitch * logLikelihood(posePitch - pitch, m_sigmaPitch);
 
     // integrate height measurement (z)
-    double heightError;
-    if (getHeightError(particles[i],footprintToTorso, heightError))
-      particles[i].weight += m_weightZ * logLikelihood(heightError, m_sigmaZ);
+    double heightError = 0;
+//    if (getHeightError(particles[i],footprintToTorso, heightError))
+//      particles[i].weight += m_weightZ * logLikelihood(heightError, m_sigmaZ);
+    particles[i].weight += m_weightZ * logLikelihood(heightError, m_sigmaZ);
 
 
   }
