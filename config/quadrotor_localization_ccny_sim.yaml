@@ -3,7 +3,7 @@
 #
 
 odom_frame_id: "odom"
-base_frame_id: "camera_link"
+base_frame_id: "camera_rgb_frame"
  # raycasting (slow) or endpoint model (approx)
 use_raycasting: true
 use_imu: false
@@ -14,7 +14,7 @@ use_imu: false
 #weight_factor_z: 5.0
 
 
-num_particles: 50
+num_particles: 20
 init_global: false
 init_from_truepose: false
 
@@ -30,21 +30,21 @@ neff_factor: 1.0
 # Warning: this keeps the particles from converging properly!
 #min_particle_weight: 0.000001
 
-num_sensor_beams: 10
-temporal_sampling_range: 0.5
-#transform_tolerance: 10.0
+num_sensor_beams: 1
+temporal_sampling_range: 1.0
+transform_tolerance: 0.15
 
 # min traversed odometry interval between laser measurements:
 # 
-update_min_trans: 0.2
-update_min_rot: 15.2
+update_min_trans: 0.05
+update_min_rot: 2.2
 
 # laser obs. model (for raycasting only)
 raycasting/z_hit: 0.8
 raycasting/z_short: 0.1
 raycasting/z_max: 0.05
 raycasting/z_rand: 0.05
-raycasting/sigma_hit: 0.15
+raycasting/sigma_hit: 0.05
 raycasting/lambda_short: 0.1
 
 # laser obs.model (for endpoint model only)
@@ -60,13 +60,13 @@ endpoint/sigma: 0.15
 #motion_range_roll: 0.25
 #motion_range_pitch: 0.1
 
-motion_sigma_z: 0.2
+motion_sigma_z: 0.02
 motion_sigma_roll: 0.015 # 0.85 deg.
 motion_sigma_pitch: 0.015 # 0.85 deg.
 
-motion_noise/x: 0.10    # per m
-motion_noise/y: 0.10    # per m
-motion_noise/z: 0.10   # per m
+motion_noise/x: 0.25    # per m
+motion_noise/y: 0.25    # per m
+motion_noise/z: 0.25   # per m
 motion_noise/roll: 0.3    # per m
 motion_noise/pitch: 0.3    # per m
 motion_noise/yaw: 0.3    # per m
@@ -80,9 +80,9 @@ initial_pose/pitch: 0.0
 initial_pose/yaw: 0.0    
 
 # std dev for initial noise (truepose or manual init)
-initial_std/x: 0.03
-initial_std/y: 0.03
-initial_std/z: 0.015
-initial_std/roll: 0.04
-initial_std/pitch: 0.04
-initial_std/yaw: 0.2    # ~13 deg
+initial_std/x: 0.05
+initial_std/y: 0.05
+initial_std/z: 0.05
+initial_std/roll: 0.05
+initial_std/pitch: 0.05
+initial_std/yaw: 0.05    # ~13 deg

@@ -36,28 +36,21 @@
 
 	<node pkg="octomap_server" type="octomap_server_node" name="octomap_server_node"
 		output="screen"
- 	  args="$(find sbpl_dynamic_env_global_planner_3D)/config/apt_01_qvga.bt">
-		<!-- <remap from="/cloud_in" to="/camera/deth_registered/points" /> -->
+		args="$(find sbpl_dynamic_env_global_planner_3D)/config/apt_01_qvga.bt" />
 	<!-- args="$(find sbpl_dynamic_env_global_planner_3D)/config/freiburg1_360.bt" 
 		/> -->
-	</node>
-	
-	
 	<!-- <node pkg="octomap_server" type="octomap_server_node" name="octomap_server_node" -->
 	<!-- output="screen" -->
 	<!-- args="$(find sbpl_dynamic_env_global_planner_3D)/config/wg_room_1.bt"/> -->
 
 
 	<node pkg="rviz" type="rviz" name="rviz"
-		args="-d $(find 6d_localization)/config/quadrotor_localization_vis_ccny_sim.vcg" />
+		args="-d $(find 6d_localization)/config/quadrotor_localization_vis_ccny_no_decay.vcg" />
 		
-	<include file="$(find ccny_openni_launch)/launch/openni_play_sim.launch">
-		<arg name="bag_name" value="apt_01_qvga.bag" />
-		<!-- arg name="camera" value="vrep" / -->
-	</include>
 
-	<include file="$(find ccny_rgbd_vo)/launch/rgbdvo.launch">
-		<arg name="reg_type" value="ICP" />
-	</include>
+	<node pkg="rosbag" type="play" name="rosbag"
+	   args="--clock --topics /tf /features --bags $(find 6d_localization)/bags/apt_01_qvga_features_only.bag">
+  </node>
+
 
 </launch>

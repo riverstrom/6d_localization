@@ -1,5 +1,5 @@
 <launch>
-	<rosparam param="use_sim_time">true </rosparam>
+	<rosparam param="use_sim_time">false </rosparam>
 
 	<!-- <node pkg="rosbag" type="play" name="rosbag1" -->
 	<!-- args="-d 4 -s 4.65 -r 0.5 - -topics /tf - -bags /host/Users/Robotics\ 
@@ -18,8 +18,8 @@
 	<!-- args="0 0 1 0 0 0 /world /kinect 100" /> -->
 	<!-- <node pkg="tf" type="static_transform_publisher" name="kinect_openni_broadcaster" -->
 	<!-- args="0 0 0 0 0 0 /kinect /openni_rgb_optical_frame 100" /> -->
-<!-- 	<node pkg="tf" type="static_transform_publisher" name="kinect_base_link_broadcaster" -->
-<!-- 		args="0 0 -1.4 0 0 0 /camera_link /base_footprint 100" /> -->
+ 	<node pkg="tf" type="static_transform_publisher" name="kinect_base_link_broadcaster"
+ 		args="0 0 -0.08 0 0 0 /camera_link /base_footprint 100" />
 	<!-- <node pkg="tf" type="static_transform_publisher" name="nav_base_link_broadcaster" -->
 	<!-- args="0 0 0 0 0 0 /map /world 100" /> -->
 
@@ -30,14 +30,15 @@
 		<remap from="/point_cloud" to="/features" />
 		<remap from="/scan" to="/scan_OFF" />
 		<rosparam
-			file="$(find 6d_localization)/config/quadrotor_localization_ccny.yaml"
+			file="$(find 6d_localization)/config/quadrotor_localization_ccny_sim.yaml"
 			command="load" />
 	</node>
 
 	<node pkg="octomap_server" type="octomap_server_node" name="octomap_server_node"
 		output="screen"
- 	  args="$(find sbpl_dynamic_env_global_planner_3D)/config/apt_01_qvga.bt">
-		<!-- <remap from="/cloud_in" to="/camera/deth_registered/points" /> -->
+		args="'/home/daniel/Dropbox/Cloud/Proyectos/Modelos 3D/MDT/vrepSimApt_7.binvox.bt'">
+ 	<!-- args="$(find sbpl_dynamic_env_global_planner_3D)/config/apt_01_qvga.bt"> -->
+		<remap from="/cloud_in" to="/camera/depth_registered/points_OFF" />
 	<!-- args="$(find sbpl_dynamic_env_global_planner_3D)/config/freiburg1_360.bt" 
 		/> -->
 	</node>
@@ -58,6 +59,7 @@
 
 	<include file="$(find ccny_rgbd_vo)/launch/rgbdvo.launch">
 		<arg name="reg_type" value="ICP" />
+		
 	</include>
 
 </launch>

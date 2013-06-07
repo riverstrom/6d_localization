@@ -1,5 +1,15 @@
 <launch>
 	<rosparam param="use_sim_time">true </rosparam>
+	
+  <arg name="path"     default="$(env HOME)/Proyectos/ROS" />
+  
+  <arg name="bag_name" default="/bags/ccny/ccny_3rooms.bag" />
+  <arg name="bag_start"  default="0.0" />
+  
+  <arg name="publish_cloud"  default="true" />
+  
+  <arg name="map_name" default="/maps/3D/CCNY 3 Rooms/Octomap/ccny_3rooms_octomap_5cm.bt" />
+  
 
 	<!-- <node pkg="rosbag" type="play" name="rosbag1" -->
 	<!-- args="-d 4 -s 4.65 -r 0.5 - -topics /tf - -bags /host/Users/Robotics\ 
@@ -27,7 +37,7 @@
 	<node pkg="6d_localization" type="localization_node" name="humanoid_localization"
 		output="screen">
 <!-- 		<remap from="/point_cloud" to="/camera/depth_registered/points" /> -->
-		<remap from="/point_cloud" to="/features" />
+		<remap from="/point_cloud" to="/feature/cloud" />
 		<remap from="/scan" to="/scan_OFF" />
 		<rosparam
 			file="$(find 6d_localization)/config/quadrotor_localization_ccny.yaml"
@@ -36,7 +46,7 @@
 
 	<node pkg="octomap_server" type="octomap_server_node" name="octomap_server_node"
 		output="screen"
- 	  args="$(find sbpl_dynamic_env_global_planner_3D)/config/apt_01_qvga.bt">
+ 	  args="'$(arg path)$(arg map_name)'">
 		<!-- <remap from="/cloud_in" to="/camera/deth_registered/points" /> -->
 	<!-- args="$(find sbpl_dynamic_env_global_planner_3D)/config/freiburg1_360.bt" 
 		/> -->
@@ -49,15 +59,18 @@
 
 
 	<node pkg="rviz" type="rviz" name="rviz"
-		args="-d $(find 6d_localization)/config/quadrotor_localization_vis_ccny_sim.vcg" />
+		args="-d $(find 6d_localization)/config/quadrotor_localization_vis_play.vcg" />
 		
-	<include file="$(find ccny_openni_launch)/launch/openni_play_sim.launch">
-		<arg name="bag_name" value="apt_01_qvga.bag" />
+	<include file="$(find ccny_openni_launch)/launch/openni_play.launch">
+		<arg name="bag_name" value="'$(arg path)$(arg bag_name)'" />
+		<arg name="bag_start" value="$(arg bag_start)"/>
+		<arg name="publish_cloud" value="$(arg publish_cloud)"/>
+		<!-- <arg name="bag_name" value="apt_01_qvga.bag" / -->
 		<!-- arg name="camera" value="vrep" / -->
 	</include>
 
-	<include file="$(find ccny_rgbd_vo)/launch/rgbdvo.launch">
-		<arg name="reg_type" value="ICP" />
+	<include file="$(find ccny_rgbd)/launch/visual_odometry.launch">
+		<!-- <arg name="reg_type" value="ICP" / -->
 	</include>
 
 </launch>
